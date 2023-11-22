@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:latest
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'nombre_de_tu_bd'
+      MYSQL_USER: 'usuario'
+      MYSQL_PASSWORD: 'contraseña'
+      MYSQL_ROOT_PASSWORD: 'contraseña_root'
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  backend:
+    build: ./Backend
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./Backend:/app
+    ports:
+      - '8000:8000'
+    depends_on:
+      - db
+    environment:
+      - DB_NAME=nombre_de_tu_bd
+      - DB_USER=usuario
+      - DB_PASS=contraseña
+      - DB_SERVICE=db
+      - DB_PORT=3306
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    volumes:
+      - './Frontend/frontend-bd:/app'
+      - '/app/node_modules'
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_BACKEND_URL=http://localhost:8000
+
+volumes:
+  mysql_data:
